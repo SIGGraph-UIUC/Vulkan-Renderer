@@ -1,44 +1,19 @@
-﻿cmake_minimum_required(VERSION 3.8)
+﻿cmake_minimum_required(VERSION 3.10)
 
-include(ExternalProject)
-
-# Find Vulkan SDK headers
-set(vulkan_INCLUDE "$ENV{VULKAN_SDK}/Include")
-set(vulkan_LIB "$ENV{VULKAN_SDK}/Lib")
-
-# DirectXMath
-ExternalProject_Add(directxmath
-	PREFIX "${CMAKE_CURRENT_BINARY_DIR}/directxmath"
-	GIT_REPOSITORY "https://github.com/microsoft/DirectXMath.git"
-	GIT_TAG "nov2022"
-	GIT_SHALLOW true
-	BUILD_COMMAND ""
-	INSTALL_COMMAND ""
-	UPDATE_COMMAND ""
-)
-
-# VMA
-ExternalProject_Add(vma
-	PREFIX "${CMAKE_CURRENT_BINARY_DIR}/vma"
-	GIT_REPOSITORY "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git"
-	GIT_TAG "v3.0.1"
-	GIT_SHALLOW true
-	BUILD_COMMAND ""
-	INSTALL_COMMAND ""
-	UPDATE_COMMAND ""
-)
+set(Vulkan_LIB "$ENV{VULKAN_SDK}/Lib/vulkan-1.lib")
+set(Vulkan_INCLUDE "$ENV{VULKAN_SDK}/Include")
 
 # Build HLSL shaders
-add_custom_target(shaders)
+add_custom_target(Shaders)
 
 # DirectX Shader Compiler is now included in the Vulkan SDK
-set(HLSL_COMPILER "$ENV{VULKAN_SDK}/Bin/dxc.exe")
+set(HLSL_COMPILER $ENV{VULKAN_SDK}/Bin/dxc.exe)
 
 set(VERTEX_SHADER_FILES
-	"Source/Shaders/TriangleVS.hlsl"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/Shaders/TriangleVS.hlsl"
 )
 set(PIXEL_SHADER_FILES
-	"Source/Shaders/TrianglePS.hlsl"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/Shaders/TrianglePS.hlsl"
 )
 set(ALL_SHADER_FILES ${VERTEX_SHADER_FILES} ${PIXEL_SHADER_FILES})
 set_source_files_properties(${VERTEX_SHADER_FILES} PROPERTIES ShaderType "vs")
@@ -50,7 +25,7 @@ foreach(FILE ${ALL_SHADER_FILES})
   get_filename_component(FILE_WE ${FILE} NAME_WE)
   get_source_file_property(shadertype ${FILE} ShaderType)
   get_source_file_property(shadermodel ${FILE} ShaderModel)
-  add_custom_command(TARGET shaders
+  add_custom_command(TARGET Shaders
 	COMMAND ${HLSL_COMPILER} -spirv -fvk-use-scalar-layout -E main -T${shadertype}_${shadermodel} $<IF:$<CONFIG:DEBUG>,-Od,-O1> -Zi -Fo ${CMAKE_BINARY_DIR}/${FILE_WE}.spv ${FILE}
     MAIN_DEPENDENCY ${FILE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -58,34 +33,42 @@ foreach(FILE ${ALL_SHADER_FILES})
   )
 endforeach(FILE)
 add_compile_definitions(
-	SHADER_PATH=\"${CMAKE_BINARY_DIR}/\"
+	SHADER_PATH=\"${CMAKE_BINARY_DIR}\"
+	ASSET_PATH=\"${CMAKE_CURRENT_SOURCE_DIR}/Assets\"
 	"VK_USE_PLATFORM_WIN32_KHR" 
 	"UNICODE"
 	"WIN32_LEAN_AND_MEAN"
 	"NOMINMAX"
 )
 
-project("Vulkan")
-
-add_executable(Vulkan
-	"Source/Main.cpp"
-	"Source/VulkanApp.cpp"
-	"Source/VulkanUtil.cpp"
-	"Source/Resources.cpp"
-	"Source/Window.cpp"
-)
-add_dependencies(Vulkan
-	directxmath
-	vma
-	shaders
-)
-target_include_directories(Vulkan PRIVATE
-	"${vulkan_INCLUDE}"
-	"${CMAKE_CURRENT_BINARY_DIR}/directxmath/src"
-	"${CMAKE_CURRENT_BINARY_DIR}/vma/src"
-)
-target_link_libraries(Vulkan PRIVATE
-	"${vulkan_LIB}/vulkan-1.lib"
+add_custom_target(CopyBinaries
+	COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/External/bin/assimp-vc143-mt.dll" ${CMAKE_CURRENT_BINARY_DIR}
+	COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/External/bin/zlib1.dll" ${CMAKE_CURRENT_BINARY_DIR}
+	COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/External/bin/pugixml.dll" ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-set_property(TARGET Vulkan PROPERTY CXX_STANDARD 17)
+project("VulkanApp")
+
+add_executable(VulkanRenderer
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/Main.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/VulkanApp.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/VulkanUtil.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/Resources.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/Window.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Source/ModelLoading.cpp"
+)
+target_link_libraries(VulkanRenderer PRIVATE
+	${Vulkan_LIB}
+	"${CMAKE_CURRENT_SOURCE_DIR}/External/lib/assimp-vc143-mt.lib"
+)
+target_include_directories(VulkanRenderer PRIVATE
+	${Vulkan_INCLUDE}
+	"${CMAKE_CURRENT_SOURCE_DIR}/External/include"
+)
+add_dependencies(VulkanRenderer
+	CopyBinaries
+	Shaders
+)
+
+set_property(TARGET VulkanRenderer PROPERTY CXX_STANDARD 17)
+

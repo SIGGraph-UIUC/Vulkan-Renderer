@@ -5,7 +5,7 @@
 #include <optional>
 #include <vector>
 
-#include <directxmath/Inc/DirectXMath.h>
+#include <DirectXMath.h>
 
 #include "VulkanUtil.h"
 
@@ -131,49 +131,43 @@ namespace
 		}
 	}
 
-	struct Vertex
-	{
-		XMFLOAT3 position;
-		XMFLOAT3 normal;
-	};
-
-	constexpr std::array<Vertex, 36> cubeVertices = {
-		Vertex{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
-		Vertex{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-		Vertex{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		Vertex{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
-		Vertex{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-		Vertex{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-		Vertex{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+	constexpr std::array<VertexP3N3, 36> cubeVertices = {
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-0.0f, 0.0f, 1.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, -0.0f, -0.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+		VertexP3N3{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
 	};
 
 	constexpr std::array<uint16_t, 36> cubeIndices = {
@@ -245,7 +239,8 @@ void VulkanApp::Update()
 	auto up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	auto view = XMMatrixLookAtRH(eye, focus, up);
 	auto proj = XMMatrixPerspectiveFovRH(XMConvertToRadians(80.0f), m_aspectRatio, 0.1f, 100.0f);
-	auto model = XMMatrixRotationRollPitchYaw(3.0f * sinf(t), 4.0f * cosf(t), 0.0f);
+	auto model = XMMatrixTranslation(0.0f, -0.1f, 0.0f) * XMMatrixScaling(25.0f, 25.0f, 25.0f)
+		* XMMatrixRotationRollPitchYaw(0.0f, fmod(t, 2.0f * XM_PI), 0.0f);
 	auto viewProj = model * view * proj;
 	XMStoreFloat4x4(&globalConstants.viewProj, XMMatrixTranspose(viewProj));
 	
@@ -335,9 +330,9 @@ void VulkanApp::Render()
 		frame.commandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_pipelineLayout, 
 			0, m_resourceManager.GetDescriptorSet(), {});
 		// Bind the index buffer from the Resource Manager
-		frame.commandBuffer->bindIndexBuffer(m_resourceManager.GetIndexBuffer(), 0, vk::IndexType::eUint16);
+		frame.commandBuffer->bindIndexBuffer(m_resourceManager.GetIndexBuffer(), 0, vk::IndexType::eUint32);
 
-		frame.commandBuffer->drawIndexed(cubeIndices.size(), 1, 0, 0, 0);
+		frame.commandBuffer->drawIndexed(m_mesh.indices.size(), 1, 0, 0, 0);
 
 		frame.commandBuffer->endRendering();
 
@@ -405,10 +400,11 @@ void VulkanApp::CreateDeviceDependentResources()
 		frame = FrameResources(*m_device, m_gfxQueueIdx);
 	}
 
-	m_vertexBuffer = m_resourceManager.CreateVertices(*m_device, cubeVertices.data(),
-		cubeVertices.size() * sizeof(cubeVertices[0]));
-	m_indexBuffer = m_resourceManager.CreateIndices(*m_device, cubeIndices.data(),
-		cubeIndices.size() * sizeof(cubeIndices[0]));
+	m_mesh = LoadModel(ASSET_PATH + "/bunny.obj"s)[0];
+	m_vertexBuffer = m_resourceManager.CreateVertices(*m_device, m_mesh.vertices.data(),
+		m_mesh.vertices.size() * sizeof(m_mesh.vertices[0]));
+	m_indexBuffer = m_resourceManager.CreateIndices(*m_device, m_mesh.indices.data(),
+		m_mesh.indices.size() * sizeof(m_mesh.indices[0]));
 
 	// Create the pipeline layout and pipeline
 	// This will be removed later when the engine becomes dynamic
@@ -447,9 +443,9 @@ void VulkanApp::CreateDeviceDependentResources()
 
 	// Create shaders for our triangle. According to the spec, you don't need to keep the vkShaderModules
 	// around after creating the pipeline, so they are not stored in the main class.
-	auto vertexShader = CreateShader(*m_device, SHADER_PATH + "TriangleVS.spv"s);
+	auto vertexShader = CreateShader(*m_device, SHADER_PATH + "/TriangleVS.spv"s);
 	builder.AddShaderStage(vk::ShaderStageFlagBits::eVertex, *vertexShader);
-	auto pixelShader = CreateShader(*m_device, SHADER_PATH + "TrianglePS.spv"s);
+	auto pixelShader = CreateShader(*m_device, SHADER_PATH + "/TrianglePS.spv"s);
 	builder.AddShaderStage(vk::ShaderStageFlagBits::eFragment, *pixelShader);
 	m_pipeline = builder.CreatePipeline(*m_device, *m_pipelineLayout);
 }

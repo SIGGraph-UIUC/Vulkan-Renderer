@@ -1,10 +1,11 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
-#include <vma/include/vk_mem_alloc.h>
+#include <vma/vk_mem_alloc.h>
 
 #include "Resources.h"
 #include "Window.h"
+#include "ModelLoading.h"
 
 class VulkanApp
 {
@@ -97,6 +98,7 @@ private:
 	// Graphics resource management	
 	ResourceManager m_resourceManager;
 
+	Mesh m_mesh;
 	uint32_t m_vertexBuffer;
 	uint32_t m_indexBuffer;
 };

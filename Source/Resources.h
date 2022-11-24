@@ -1,6 +1,6 @@
 #pragma once
 
-#include <directxmath/Inc/DirectXMath.h>
+#include <DirectXMath.h>
 
 #include "VulkanUtil.h"
 

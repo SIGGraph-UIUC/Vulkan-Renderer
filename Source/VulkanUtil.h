@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vk_enum_string_helper.h>
-#include <vma/include/vk_mem_alloc.h>
+#include <vma/vk_mem_alloc.h>
 
 // Use double-buffering
 constexpr int BACK_BUFFER_COUNT = 2;
