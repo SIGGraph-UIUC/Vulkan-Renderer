@@ -170,7 +170,7 @@ namespace
 		VertexP3N3{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
 	};
 
-	constexpr std::array<uint16_t, 36> cubeIndices = {
+	constexpr std::array<uint32_t, 36> cubeIndices = {
 		1, 0, 2,
 		4, 3, 5,
 		7, 6, 8,
@@ -280,7 +280,7 @@ void VulkanApp::Render()
 		vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 		frame.commandBuffer->begin(vk::CommandBufferBeginInfo());
 
-		// Transition the backbuffer image
+		// Transition the swapchain image
 		InsertImageMemoryBarrier(*frame.commandBuffer, image,
 			vk::AccessFlagBits::eNone, 
 			vk::AccessFlagBits::eColorAttachmentWrite,
@@ -303,9 +303,11 @@ void VulkanApp::Render()
 		constexpr std::array<float, 4> clearColor = { 0.95f, 0.77f, 0.33f, 0.0f };
 		constexpr vk::ClearValue colorClearValue{ vk::ClearColorValue(clearColor) };
 		constexpr vk::ClearValue depthClearValue{ vk::ClearDepthStencilValue(1.0f, 0) };
-		vk::RenderingAttachmentInfo colorAttachmentInfo(*imageView,
+		vk::RenderingAttachmentInfo colorAttachmentInfo(*m_colorBufferView,
 			vk::ImageLayout::eAttachmentOptimal,
-			{}, {}, {},
+			vk::ResolveModeFlagBits::eAverage,
+			*imageView,
+			vk::ImageLayout::eAttachmentOptimal,
 			vk::AttachmentLoadOp::eClear,
 			vk::AttachmentStoreOp::eStore,
 			colorClearValue);
@@ -421,6 +423,8 @@ void VulkanApp::CreateDeviceDependentResources()
 	rasterizerInfo.cullMode = vk::CullModeFlagBits::eBack;
 	rasterizerInfo.frontFace = vk::FrontFace::eClockwise;
 
+	vk::PipelineMultisampleStateCreateInfo multisampleInfo({}, vk::SampleCountFlagBits::e8);
+
 	// Color blend state
 	vk::PipelineColorBlendAttachmentState blendInfo;
 	blendInfo.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
@@ -435,7 +439,7 @@ void VulkanApp::CreateDeviceDependentResources()
 	builder.SetInputAssemblyState(inputAssemblyInfo);
 	builder.SetVertexInputState(vk::PipelineVertexInputStateCreateInfo());
 	builder.SetRasterizerState(rasterizerInfo);
-	builder.SetMultisampleState(vk::PipelineMultisampleStateCreateInfo());
+	builder.SetMultisampleState(multisampleInfo);
 	builder.SetDepthStencilState(depthStencilInfo);
 	builder.AddColorAttachment(blendInfo, m_backBufferFormat);
 	builder.SetDepthAttachment(m_depthBufferFormat);
@@ -453,25 +457,34 @@ void VulkanApp::CreateDeviceDependentResources()
 void VulkanApp::CreateWindowSizeDependentResources()
 {
 	auto [width, height] = m_window.GetSize();
-	/*
-	// Find out the height of our window in pixels
-	int width, height;
-	glfwGetFramebufferSize(m_pWindow, &width, &height);
-	// If the window is minimized, suspend the app
-	while (width == 0 || height == 0)
-	{
-		glfwGetFramebufferSize(m_pWindow, &width, &height);
-		glfwWaitEvents();
-	}
-	*/
-	// Set up size properties
+
 	m_aspectRatio = 1.0f * width / height;
 	m_backBufferExtent = vk::Extent2D(width, height);
 	m_screenViewport = vk::Viewport(0.0f, height, width, -height, 0.0f, 1.0f);
 	m_screenScissor = vk::Rect2D(vk::Offset2D(), vk::Extent2D(width, height));
 
-	// Create swapchain resources
 	CreateSwapchain();
+
+	// Create color buffer
+	AllocationCreateInfo allocationInfo({}, VMA_MEMORY_USAGE_AUTO);
+	vk::ImageCreateInfo colorInfo({}, vk::ImageType::e2D, m_backBufferFormat, vk::Extent3D(m_backBufferExtent, 1),
+		1, 1, vk::SampleCountFlagBits::e8, vk::ImageTiling::eOptimal, 
+		vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransientAttachment,
+		vk::SharingMode::eExclusive, {}, vk::ImageLayout::eUndefined);
+	m_colorBuffer = UniqueAllocatedImage(*m_allocator, colorInfo, allocationInfo);
+	vk::ImageViewCreateInfo colorViewInfo({}, m_colorBuffer.GetImage(), vk::ImageViewType::e2D, m_backBufferFormat,
+		{}, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+	m_colorBufferView = m_device->createImageViewUnique(colorViewInfo);
+
+	// Create depth buffer
+	vk::ImageCreateInfo depthInfo({}, vk::ImageType::e2D, m_depthBufferFormat, vk::Extent3D(m_backBufferExtent, 1),
+		1, 1, vk::SampleCountFlagBits::e8, vk::ImageTiling::eOptimal, 
+		vk::ImageUsageFlagBits::eDepthStencilAttachment,
+		vk::SharingMode::eExclusive, {}, vk::ImageLayout::eUndefined);
+	m_depthBuffer = UniqueAllocatedImage(*m_allocator, depthInfo, allocationInfo);
+	vk::ImageViewCreateInfo depthViewInfo({}, m_depthBuffer.GetImage(), vk::ImageViewType::e2D, m_depthBufferFormat,
+		{}, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, 0, 1, 0, 1));
+	m_depthBufferView = m_device->createImageViewUnique(depthViewInfo);
 }
 
 void VulkanApp::CreateInstance(std::vector<const char*>& enabledLayers)
@@ -603,25 +616,6 @@ void VulkanApp::CreateSwapchain()
 			{}, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
 		m_swapchainImageViews.push_back(m_device->createImageViewUnique(imageViewInfo));
 	}
-
-	// Create depth buffer
-	auto formatSupport = m_physicalDevice.getFormatProperties(m_depthBufferFormat).optimalTilingFeatures
-		& vk::FormatFeatureFlagBits::eDepthStencilAttachment;
-	// At least one should be supported.
-	if (!formatSupport)
-	{
-		throw std::runtime_error("Required depth-stencil format not supported");
-	}
-
-	vk::ImageCreateInfo depthInfo({}, vk::ImageType::e2D, m_depthBufferFormat, vk::Extent3D(m_backBufferExtent, 1),
-		1, 1, vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, 
-		vk::SharingMode::eExclusive, {}, vk::ImageLayout::eUndefined);
-	AllocationCreateInfo depthAllocationInfo({}, VMA_MEMORY_USAGE_AUTO);
-	m_depthBuffer = UniqueAllocatedImage(*m_allocator, depthInfo, depthAllocationInfo);
-
-	vk::ImageViewCreateInfo depthViewInfo({}, m_depthBuffer.GetImage(), vk::ImageViewType::e2D, m_depthBufferFormat,
-		{}, vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil, 0, 1, 0, 1));
-	m_depthBufferView = m_device->createImageViewUnique(depthViewInfo);
 }
 
 VulkanApp::FrameResources::FrameResources(const vk::Device& device, uint32_t gfxQueueIdx)

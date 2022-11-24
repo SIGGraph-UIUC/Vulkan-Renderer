@@ -64,11 +64,15 @@ private:
 	// GPU Memory allocator - it must be destroyed only AFTER all resources created from it!
 	UniqueAllocator m_allocator;
 
-	// Swapchain and depth buffer resources
+	// Swapchain resources
 	vk::UniqueSurfaceKHR m_surface;
 	vk::UniqueSwapchainKHR m_swapchain;
 	std::vector<vk::Image> m_swapchainImages;
 	std::vector<vk::UniqueImageView> m_swapchainImageViews;
+
+	// Multisampled image resources
+	UniqueAllocatedImage m_colorBuffer;
+	vk::UniqueImageView m_colorBufferView;
 	UniqueAllocatedImage m_depthBuffer;
 	vk::UniqueImageView m_depthBufferView;
 
