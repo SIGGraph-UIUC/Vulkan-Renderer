@@ -47,6 +47,10 @@ add_custom_target(CopyBinaries
 	COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/External/bin/pugixml.dll" ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+add_custom_target(CopyLayerSettings
+	COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/vk_layer_settings.txt" ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 project("VulkanApp")
 
 add_executable(VulkanRenderer
@@ -67,6 +71,7 @@ target_include_directories(VulkanRenderer PRIVATE
 )
 add_dependencies(VulkanRenderer
 	CopyBinaries
+	CopyLayerSettings
 	Shaders
 )
 

@@ -2,6 +2,173 @@
 
 #include <fstream>
 
+namespace
+{
+	constexpr std::array<AccessInfo, 26> g_accessInfoTable = {
+		// eNone
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::ImageLayout::eUndefined
+		},
+		// eReadIndirectBuffer
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eDrawIndirect,
+			vk::AccessFlagBits2::eIndirectCommandRead,
+			vk::ImageLayout::eUndefined
+		},
+		// eReadIndexBuffer
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eIndexInput,
+			vk::AccessFlagBits2::eIndexRead,
+			vk::ImageLayout::eUndefined
+		},
+		// eReadVertexBuffer
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eVertexAttributeInput,
+			vk::AccessFlagBits2::eVertexAttributeRead,
+			vk::ImageLayout::eUndefined
+		},
+		// eReadVertexShader
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eVertexShader,
+			vk::AccessFlagBits2::eShaderRead,
+			vk::ImageLayout::eShaderReadOnlyOptimal
+		},
+		// eReadFragmentShader
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::AccessFlagBits2::eShaderRead,
+			vk::ImageLayout::eShaderReadOnlyOptimal
+		},
+		// eReadFragmentShaderColorInputAttachment
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::AccessFlagBits2::eInputAttachmentRead,
+			vk::ImageLayout::eShaderReadOnlyOptimal
+		},
+		// eReadFragmentShaderDepthStencilInputAttachment
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+			vk::AccessFlagBits2::eDepthStencilAttachmentRead,
+			vk::ImageLayout::eDepthStencilReadOnlyOptimal
+		},
+		// eReadColorAttachment
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+			vk::AccessFlagBits2::eColorAttachmentRead,
+			vk::ImageLayout::eColorAttachmentOptimal
+		},
+		// eReadDepthStencilAttachment
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+			vk::AccessFlagBits2::eDepthStencilAttachmentRead,
+			vk::ImageLayout::eDepthStencilReadOnlyOptimal
+		},
+		// eReadComputeShader
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderRead,
+			vk::ImageLayout::eShaderReadOnlyOptimal
+		},
+		// eReadAnyShader
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eAllGraphics | vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderRead,
+			vk::ImageLayout::eShaderReadOnlyOptimal
+		},
+		// eReadTransfer
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferRead,
+			vk::ImageLayout::eTransferSrcOptimal
+		},
+		// eReadHost
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostRead,
+			vk::ImageLayout::eGeneral
+		},
+		// eReadPresent
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eNone,
+			vk::AccessFlagBits2::eNone,
+			vk::ImageLayout::ePresentSrcKHR
+		},
+		// eWriteVertexShader
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eVertexShader,
+			vk::AccessFlagBits2::eShaderWrite,
+			vk::ImageLayout::eGeneral
+		},
+		// eWriteFragmentShader
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eFragmentShader,
+			vk::AccessFlagBits2::eShaderWrite,
+			vk::ImageLayout::eGeneral
+		},
+		// eWriteColorAttachment
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+			vk::AccessFlagBits2::eColorAttachmentWrite,
+			vk::ImageLayout::eColorAttachmentOptimal
+		},
+		// eWriteDepthStencilAttachment
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+			vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+			vk::ImageLayout::eDepthStencilAttachmentOptimal
+		},
+		// eWriteComputeShader
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderWrite,
+			vk::ImageLayout::eGeneral
+		},
+		// eWriteAnyShader
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eAllGraphics | vk::PipelineStageFlagBits2::eComputeShader,
+			vk::AccessFlagBits2::eShaderWrite,
+			vk::ImageLayout::eGeneral
+		},
+		// eWriteTransfer
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eTransfer,
+			vk::AccessFlagBits2::eTransferWrite,
+			vk::ImageLayout::eTransferDstOptimal
+		},
+		// eWriteHostPreinitialized
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostWrite,
+			vk::ImageLayout::ePreinitialized
+		},
+		// eWriteHost
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eHost,
+			vk::AccessFlagBits2::eHostWrite,
+			vk::ImageLayout::eGeneral
+		},
+		// eReadWriteColorAttachment
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+			vk::AccessFlagBits2::eColorAttachmentRead | vk::AccessFlagBits2::eColorAttachmentWrite,
+			vk::ImageLayout::eGeneral
+		},
+		// eGeneral
+		AccessInfo{
+			vk::PipelineStageFlagBits2::eAllCommands,
+			vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
+			vk::ImageLayout::eGeneral
+		}
+	};
+
+	constexpr bool RequiresWriteAccess(AccessType type)
+	{
+		return type >= AccessType::eWriteVertexShader;
+	}
+}
+
 // Loads a SPIR-V shader from disk
 vk::UniqueShaderModule CreateShader(const vk::Device& device, const std::string& path)
 {
@@ -21,17 +188,6 @@ vk::UniqueShaderModule CreateShader(const vk::Device& device, const std::string&
 	return device.createShaderModuleUnique(smci);
 }
 
-// Helper function to insert an image memory barrier into the command buffer
-void InsertImageMemoryBarrier(const vk::CommandBuffer& commandBuffer, const vk::Image& image,
-	vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::ImageLayout oldLayout, 
-	vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask, 
-	const vk::ImageSubresourceRange& subresourceRange)
-{
-	vk::ImageMemoryBarrier imageMemoryBarrier(srcAccessMask, dstAccessMask, oldLayout, newLayout,
-		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, image, subresourceRange);
-	commandBuffer.pipelineBarrier(srcStageMask, dstStageMask, {}, {}, {}, imageMemoryBarrier);
-}
-
 double GetTime()
 {
 	static LARGE_INTEGER s_frequency{};
@@ -42,7 +198,161 @@ double GetTime()
 	}
 	LARGE_INTEGER count;
 	QueryPerformanceCounter(&count);
-	return 1.0f * count.QuadPart / s_frequency.QuadPart;
+	return 1.0 * count.QuadPart / s_frequency.QuadPart;
+}
+
+vk::MemoryBarrier2 CreateMemoryBarrier(const vk::ArrayProxy<AccessType>& prevAccesses, const vk::ArrayProxy<AccessType>& nextAccesses)
+{
+	vk::MemoryBarrier2 ret;
+
+	for (auto access : prevAccesses)
+	{
+		// Write accesses should appear on their own
+		assert(!(RequiresWriteAccess(access) && prevAccesses.size() > 1));
+
+		const auto& info = g_accessInfoTable[EnumToInt(access)];
+
+		ret.srcStageMask |= info.stageMask;
+
+		// If the previous access was a write, make memory available
+		if (RequiresWriteAccess(access))
+		{
+			ret.srcAccessMask |= info.accessMask;
+		}
+	}
+	for (auto access : nextAccesses)
+	{
+		// Write accesses should appear on their own
+		assert(!(RequiresWriteAccess(access) && nextAccesses.size() > 1));
+
+		const auto& info = g_accessInfoTable[EnumToInt(access)];
+
+		ret.dstStageMask |= info.stageMask;
+
+		// If previous accesses included a write, make memory visible
+		if (ret.srcAccessMask)
+		{
+			ret.dstAccessMask |= info.accessMask;
+		}
+	}
+	return ret;
+}
+
+vk::BufferMemoryBarrier2 CreateBufferMemoryBarrier(const vk::ArrayProxy<AccessType>& prevAccesses, const vk::ArrayProxy<AccessType>& nextAccesses, const vk::Buffer& buffer, vk::DeviceSize offset, vk::DeviceSize size, uint32_t srcQueueFamilyIdx, uint32_t dstQueueFamilyIdx)
+{
+	vk::BufferMemoryBarrier2 ret({}, {}, {}, {}, srcQueueFamilyIdx, dstQueueFamilyIdx, buffer, offset, size);
+
+	// Other steps are exactly the same as for a normal MemoryBarrier.
+	for (auto access : prevAccesses)
+	{
+		// Write accesses should appear on their own
+		assert(!(RequiresWriteAccess(access) && prevAccesses.size() > 1));
+
+		const auto& info = g_accessInfoTable[EnumToInt(access)];
+
+		ret.srcStageMask |= info.stageMask;
+
+		// If the previous access was a write, make memory available
+		if (RequiresWriteAccess(access))
+		{
+			ret.srcAccessMask |= info.accessMask;
+		}
+	}
+	for (auto access : nextAccesses)
+	{
+		// Write accesses should appear on their own
+		assert(!(RequiresWriteAccess(access) && nextAccesses.size() > 1));
+
+		const auto& info = g_accessInfoTable[EnumToInt(access)];
+
+		ret.dstStageMask |= info.stageMask;
+
+		// If previous accesses included a write, make memory visible
+		if (ret.srcAccessMask)
+		{
+			ret.dstAccessMask |= info.accessMask;
+		}
+	}
+	return ret;
+}
+
+vk::ImageMemoryBarrier2 CreateImageMemoryBarrier(const vk::ArrayProxy<AccessType>& prevAccesses, 
+	const vk::ArrayProxy<AccessType>& nextAccesses, ImageLayout oldLayout, ImageLayout newLayout, 
+	bool discard, const vk::Image& image, const vk::ImageSubresourceRange& subresourceRange, 
+	uint32_t srcQueueFamilyIdx, uint32_t dstQueueFamilyIdx)
+{
+	vk::ImageMemoryBarrier2 ret({}, {}, {}, {}, {}, {}, srcQueueFamilyIdx, dstQueueFamilyIdx, image, subresourceRange);
+
+	for (auto access : prevAccesses)
+	{
+		// Write accesses should appear on their own
+		assert(!(RequiresWriteAccess(access) && prevAccesses.size() > 1));
+
+		const auto& info = g_accessInfoTable[EnumToInt(access)];
+
+		ret.srcStageMask |= info.stageMask;
+
+		// If the previous access was a write, make memory available
+		if (RequiresWriteAccess(access))
+		{
+			ret.srcAccessMask |= info.accessMask;
+		}
+
+		// Deal with layout transitions
+		if (discard)
+		{
+			ret.oldLayout = vk::ImageLayout::eUndefined;
+		}
+		else
+		{
+			vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+			if (oldLayout == ImageLayout::eGeneral)
+			{
+				layout = (access == AccessType::eReadPresent)
+					? vk::ImageLayout::ePresentSrcKHR
+					: vk::ImageLayout::eGeneral;
+			}
+			else if (oldLayout == ImageLayout::eOptimal)
+			{
+				layout = info.imageLayout;
+			}
+			// Check that layouts aren't mixed
+			assert((ret.oldLayout == vk::ImageLayout::eUndefined) || (ret.oldLayout == layout));
+			ret.oldLayout = layout;
+		}
+	}
+	for (auto access : nextAccesses)
+	{
+		// Write accesses should appear on their own
+		assert(!(RequiresWriteAccess(access) && nextAccesses.size() > 1));
+
+		const auto& info = g_accessInfoTable[EnumToInt(access)];
+
+		ret.dstStageMask |= info.stageMask;
+
+		// If previous accesses included a write, make memory visible
+		if (ret.srcAccessMask)
+		{
+			ret.dstAccessMask |= info.accessMask;
+		}
+
+		// Deal with layout transitions
+		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+		if (newLayout == ImageLayout::eGeneral)
+		{
+			layout = (access == AccessType::eReadPresent)
+				? vk::ImageLayout::ePresentSrcKHR
+				: vk::ImageLayout::eGeneral;
+		}
+		else if (oldLayout == ImageLayout::eOptimal)
+		{
+			layout = info.imageLayout;
+		}
+		// Check that layouts aren't mixed
+		assert((ret.newLayout == vk::ImageLayout::eUndefined) || (ret.newLayout == layout));
+		ret.newLayout = layout;
+	}
+	return ret;
 }
 
 PipelineBuilder& PipelineBuilder::AddShaderStage(vk::ShaderStageFlagBits stage, const vk::ShaderModule& module)

@@ -4,7 +4,6 @@
 #include <functional>
 
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vk_enum_string_helper.h>
 #include <vma/vk_mem_alloc.h>
 
 // Use double-buffering
@@ -13,20 +12,17 @@ constexpr int BACK_BUFFER_COUNT = 2;
 // Loads a SPIR-V shader from disk
 vk::UniqueShaderModule CreateShader(const vk::Device& device, const std::string& path);
 
-// Helper function to insert a single image memory barrier into a command buffer
-void InsertImageMemoryBarrier(const vk::CommandBuffer& commandBuffer, const vk::Image& image,
-	vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::ImageLayout oldLayout,
-	vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask,
-	const vk::ImageSubresourceRange& subresourceRange);
+inline void ThrowIfFailed(vk::Result result)
+{
+	if (result != vk::Result::eSuccess)
+	{
+		throw std::runtime_error("Failed with Vulkan error: " + vk::to_string(result));
+	}
+}
 
 inline void ThrowIfFailed(VkResult result)
 {
-	using namespace std::string_literals;
-
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Vulkan error"s + string_VkResult(result));
-	}
+	ThrowIfFailed(static_cast<vk::Result>(result));
 }
 
 class PipelineBuilder
@@ -136,7 +132,8 @@ public:
 		return *this;
 	}
 
-	VmaAllocator operator*() const { return m_allocator; }
+	const VmaAllocator& operator*() const { return m_allocator; }
+	VmaAllocator& operator*() { return m_allocator; }
 
 	friend void swap(UniqueAllocator& first, UniqueAllocator& second)
 	{
@@ -205,13 +202,69 @@ double GetTime();
 template<typename T>
 constexpr auto EnumToInt(T e)
 {
-	static_assert(std::is_enum_v<T>, "EnumToInt only works for enums");
+	static_assert(std::is_enum_v<T>, "EnumToInt only operates on enums");
 	return static_cast<std::underlying_type_t<T>>(e);
 }
 
 template<typename T>
 constexpr T IntToEnum(std::underlying_type_t<T> i)
 {
-	static_assert(std::is_enum_v<T>, "IntToEnum only works for enums");
+	static_assert(std::is_enum_v<T>, "IntToEnum only operates on enums");
 	return static_cast<T>(i);
 }
+
+// Defines common access patterns
+enum class AccessType
+{
+	eNone,
+	eReadIndirectBuffer,
+	eReadIndexBuffer,
+	eReadVertexBuffer,
+	eReadVertexShader,
+	eReadFragmentShader,
+	eReadFragmentShaderColorInputAttachment,
+	eReadFragmentShaderDepthStencilInputAttachment,
+	eReadColorAttachment,
+	eReadDepthStencilAttachment,
+	eReadComputeShader,
+	eReadAnyShader,
+	eReadTransfer,
+	eReadHost,
+	eReadPresent,
+	eWriteVertexShader,
+	eWriteFragmentShader,
+	eWriteColorAttachment,
+	eWriteDepthStencilAttachment,
+	eWriteComputeShader,
+	eWriteAnyShader,
+	eWriteTransfer,
+	eWriteHostPreinitialized,
+	eWriteHost,
+	eReadWriteColorAttachment,
+	eGeneral
+};
+
+enum class ImageLayout
+{
+	eOptimal,
+	eGeneral
+};
+
+struct AccessInfo
+{
+	vk::PipelineStageFlags2 stageMask;
+	vk::AccessFlags2 accessMask;
+	vk::ImageLayout imageLayout;
+};
+
+vk::MemoryBarrier2 CreateMemoryBarrier(const vk::ArrayProxy<AccessType>& prevAccesses,
+	const vk::ArrayProxy<AccessType>& nextAccesses);
+
+vk::BufferMemoryBarrier2 CreateBufferMemoryBarrier(const vk::ArrayProxy<AccessType>& prevAccesses,
+	const vk::ArrayProxy<AccessType>& nextAccesses, const vk::Buffer& buffer, vk::DeviceSize offset, vk::DeviceSize size,
+	uint32_t srcQueueFamilyIdx = VK_QUEUE_FAMILY_IGNORED, uint32_t dstQueueFamilyIdx = VK_QUEUE_FAMILY_IGNORED);
+
+vk::ImageMemoryBarrier2 CreateImageMemoryBarrier(const vk::ArrayProxy<AccessType>& prevAccesses,
+	const vk::ArrayProxy<AccessType>& nextAccesses, ImageLayout oldLayout, ImageLayout newLayout,
+	bool discard, const vk::Image& image, const vk::ImageSubresourceRange& subresourceRange,
+	uint32_t srcQueueFamilyIdx = VK_QUEUE_FAMILY_IGNORED, uint32_t dstQueueFamilyIdx = VK_QUEUE_FAMILY_IGNORED);

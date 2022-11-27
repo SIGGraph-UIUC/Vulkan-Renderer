@@ -17,11 +17,11 @@ public:
 	UniqueAllocatedBuffer(const UniqueAllocatedBuffer& other) = delete;
 	UniqueAllocatedBuffer& operator=(const UniqueAllocatedBuffer& other) = delete;
 
-	UniqueAllocatedBuffer(UniqueAllocatedBuffer&& other) : UniqueAllocatedBuffer()
+	UniqueAllocatedBuffer(UniqueAllocatedBuffer&& other) noexcept : UniqueAllocatedBuffer()
 	{
 		swap(*this, other);
 	}
-	UniqueAllocatedBuffer& operator=(UniqueAllocatedBuffer&& other)
+	UniqueAllocatedBuffer& operator=(UniqueAllocatedBuffer&& other) noexcept
 	{
 		swap(*this, other);
 		return *this;
@@ -32,8 +32,10 @@ public:
 		return m_allocator && m_buffer && m_allocation;
 	}
 
-	VkBuffer GetBuffer() const { return m_buffer; }
-	VmaAllocation GetAllocation() const { return m_allocation; }
+	const VkBuffer& GetBuffer() const { return m_buffer; }
+	VkBuffer& GetBuffer() { return m_buffer; }
+	const VmaAllocation& GetAllocation() const { return m_allocation; }
+	VmaAllocation& GetAllocation() { return m_allocation; }
 
 	friend void swap(UniqueAllocatedBuffer& first, UniqueAllocatedBuffer& second)
 	{
@@ -62,11 +64,11 @@ public:
 	UniqueAllocatedImage(const UniqueAllocatedImage& other) = delete;
 	UniqueAllocatedImage& operator=(const UniqueAllocatedImage& other) = delete;
 
-	UniqueAllocatedImage(UniqueAllocatedImage&& other) : UniqueAllocatedImage()
+	UniqueAllocatedImage(UniqueAllocatedImage&& other) noexcept : UniqueAllocatedImage()
 	{
 		swap(*this, other);
 	}
-	UniqueAllocatedImage& operator=(UniqueAllocatedImage&& other)
+	UniqueAllocatedImage& operator=(UniqueAllocatedImage&& other) noexcept
 	{
 		swap(*this, other);
 		return *this;
@@ -77,8 +79,10 @@ public:
 		return m_allocator && m_image && m_allocation;
 	}
 
-	VkImage GetImage() const { return m_image; }
-	VmaAllocation GetAllocation() const { return m_allocation; }
+	const VkImage& GetImage() const { return m_image; }
+	VkImage& GetImage() { return m_image; }
+	const VmaAllocation& GetAllocation() const { return m_allocation; }
+	VmaAllocation& GetAllocation() { return m_allocation; }
 
 	friend void swap(UniqueAllocatedImage& first, UniqueAllocatedImage& second)
 	{
@@ -105,7 +109,7 @@ struct GlobalConstants
 class ResourceManager
 {
 public:
-	ResourceManager() : m_lastVertexOffset(0), m_lastIndexOffset(0), m_frameCount(0)
+	ResourceManager() : m_lastVertexOffset(0), m_lastIndexOffset(0), m_allocator(nullptr), m_frameCount(0)
 	{
 	}
 
@@ -119,6 +123,8 @@ public:
 	uint32_t CreateIndices(const vk::Device& device, const void* pSrcData, uint32_t size) const;
 	uint32_t CreateMaterial(const void* pSrcData, uint32_t size) const;
 	uint32_t CreateTransform(const void* pSrcData, uint32_t size) const;
+	uint32_t CreateTexture(const vk::Device& device, const std::string& filename, 
+		bool linear, bool generateMips);
 	
 	// Note: for performance reasons data should only be written to these addresses through a 
 	// straight memcpy rather than assignment operators etc, to avoid accidental reads.
@@ -131,9 +137,9 @@ public:
 	{
 		return m_frameResources[m_frameCount % BACK_BUFFER_COUNT].pTransformBufferData;
 	}
-	void* GetConstants() const
+	void* GetGlobalConstants() const
 	{
-		return m_frameResources[m_frameCount % BACK_BUFFER_COUNT].pGlobalBufferData;
+		return m_frameResources[m_frameCount % BACK_BUFFER_COUNT].pGlobalConstantBufferData;
 	}
 
 	void IncrementFrameCount()
@@ -157,8 +163,11 @@ public:
 	}
 
 private:
-	void UploadBuffer(const vk::Device& device, VkBuffer dst, 
-		uint32_t offset, const void* pSrcData, uint32_t size) const;
+	UniqueAllocatedBuffer UploadStaging(const vk::Device& device, const void* pSrcData, size_t size) const;
+	void UploadBuffer(const vk::Device& device, const vk::Buffer& src, 
+		const vk::Buffer& dst, uint32_t dstOffset, size_t size) const;
+	void UploadImage(const vk::Device& device, const vk::Buffer& src, const vk::Image& dst,
+		const vk::Offset3D& imageOffset, const vk::Extent3D& imageExtent, uint32_t mipLevels) const;
 
 	void SetUpDescriptors(const vk::Device& device);
 
@@ -166,14 +175,14 @@ private:
 	struct FrameResources
 	{
 		FrameResources() :
-			pGlobalBufferData(nullptr), pMaterialBufferData(nullptr),
+			pGlobalConstantBufferData(nullptr), pMaterialBufferData(nullptr),
 			lastMaterialOffset(0), pTransformBufferData(nullptr), lastTransformOffset(0)
 		{
 		}
 		FrameResources(VmaAllocator allocator);
 
-		UniqueAllocatedBuffer globalBuffer;
-		void* pGlobalBufferData;
+		UniqueAllocatedBuffer globalConstantBuffer;
+		void* pGlobalConstantBufferData;
 
 		UniqueAllocatedBuffer materialBuffer;
 		void* pMaterialBufferData;
@@ -192,6 +201,10 @@ private:
 
 	UniqueAllocatedBuffer m_indexBuffer;
 	mutable uint32_t m_lastIndexOffset;
+
+	std::vector<UniqueAllocatedImage> m_textures;
+	std::vector<vk::UniqueImageView> m_textureViews;
+	std::vector<vk::UniqueSampler> m_samplers;
 
 	// Vulkan resources for uploading
 	vk::Queue m_queue;

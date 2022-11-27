@@ -16,7 +16,7 @@ namespace
 	}
 }
 
-Window::Window(int width, int height) :
+Window::Window(int width, int height, const std::wstring& title) :
 	m_width(0),
 	m_height(0),
 	m_hWnd(nullptr)
@@ -27,21 +27,21 @@ Window::Window(int width, int height) :
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);
 	wcex.lpfnWndProc = &WndProc;
-	wcex.lpszClassName = L"MyWindowClass";
+	wcex.lpszClassName = WINDOW_CLASS;
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
 
 	auto rc = RegisterClassExW(&wcex);
 	if (!rc)
 	{
-		throw std::runtime_error("Failed to register window class");
+		throw std::runtime_error("Error: Failed to register window class");
 	}
-
-	m_hWnd = CreateWindowExW(0, WINDOW_CLASS, L"App", WS_OVERLAPPEDWINDOW,
+	
+	m_hWnd = CreateWindowExW(0, WINDOW_CLASS, title.c_str(), WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, width, height, 
 		nullptr, nullptr, nullptr, this);
 	if (!m_hWnd)
 	{
-		throw std::runtime_error("Failed to create window");
+		throw std::runtime_error("Error: Failed to create window");
 	}
 	RECT rect{};
 	GetClientRect(m_hWnd, &rect);
@@ -55,7 +55,7 @@ Window::Window(int width, int height) :
 	rid.usUsage = 2;
 	if (!RegisterRawInputDevices(&rid, 1, sizeof(rid)))
 	{
-		throw std::runtime_error("Failed to register for Raw Input");
+		throw std::runtime_error("Error: Failed to register for Raw Input");
 	}
 	
 	ShowWindow(m_hWnd, SW_SHOW);

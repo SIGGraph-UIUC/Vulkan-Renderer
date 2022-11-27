@@ -36,7 +36,7 @@ private:
 	};
 
 	// CPU code, updating uniforms, organizing scene data etc.
-	void Update();
+	void Update(double t, double dt);
 	// Rendering logic
 	void Render();
 	void Tick();
@@ -105,4 +105,5 @@ private:
 	Mesh m_mesh;
 	uint32_t m_vertexBuffer;
 	uint32_t m_indexBuffer;
+	uint32_t m_texture;
 };

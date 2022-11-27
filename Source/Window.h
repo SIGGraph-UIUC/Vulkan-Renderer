@@ -7,7 +7,7 @@
 class Window
 {
 public:
-	Window(int width, int height);
+	Window(int width, int height, const std::wstring& title);
 
 	int MainLoop();
 
@@ -19,6 +19,11 @@ public:
 	HWND GetHWnd() const 
 	{ 
 		return m_hWnd; 
+	}
+
+	void SetTitle(const std::string& text)
+	{
+		SetWindowTextA(m_hWnd, text.c_str());
 	}
 
 	Signal<> OnTick;
@@ -33,7 +38,7 @@ private:
 	// Raw Input buffer
 	std::vector<char> m_buf;
 
-	static constexpr const wchar_t* WINDOW_CLASS = L"MyWindowClass";
+	static constexpr const wchar_t* WINDOW_CLASS = L"WindowClass";
 
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

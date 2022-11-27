@@ -1,1 +1,7 @@
-khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
+khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
+
+khronos_validation.log_filename = stdout
+
+khronos_validation.report_flags = error,perf,info,warn
+
+khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
